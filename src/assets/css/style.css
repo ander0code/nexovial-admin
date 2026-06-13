@@ -1,0 +1,48 @@
+/*
+Template Name: Tailwick - Admin & Dashboard Template
+Author: Themesdesign
+Website: https://themesdesign.in/
+Contact: themesdesign.in@gmail.com
+*/
+
+/* Google Font Link */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,100..900;1,100..900&display=swap');
+
+@import url('https://fonts.googleapis.com/css2?family=Tourney:ital,wght@0,100..900;1,100..900&display=swap');
+
+/* ========= Tailwind CSS ========= */
+@import 'tailwindcss';
+
+/* Variantes que Tailwick hereda de Preline. No usamos su JS (los menús son
+   controlados por React), así que las declaramos inertes para que su CSS compile. */
+@custom-variant hs-accordion-active (&:where(.hs-accordion-active, .hs-accordion-active *));
+@custom-variant hs-dropdown-open (&:where(.hs-dropdown-open, .hs-dropdown-open *));
+
+/* ========= Themes Config ========= */
+@import './themes.css';
+
+/* ========= Tailwind Plugin ========= */
+@plugin "@tailwindcss/typography";
+@plugin "@tailwindcss/forms";
+
+/* ========= Cutsome CSS ========= */
+
+@import './structure/_general.css';
+@import './structure/_sidenav.css';
+@import './structure/_topbar.css';
+
+/* Custome Components */
+@import './custom/_reboot.css';
+@import './custom/_helper.css';
+@import './custom/_buttons.css';
+@import './custom/_card.css';
+@import './custom/_dropdown.css';
+@import './custom/_forms.css';
+@import './custom/_print.css';
+@import './custom/_chart.css';
+
+/* Simplebar */
+@import './custom/_simplebar.css';
+
+/* Calendar */
+@import './custom/_calendar.css';
