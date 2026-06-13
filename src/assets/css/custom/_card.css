@@ -1,27 +1,28 @@
-/* 
+/*
 
-_card.css
+_card.css — estilo iBanKo: tarjetas blancas redondeadas que flotan sobre
+el lienzo gris, con sombra suave y difusa (nada de bordes duros).
 
 */
 
 @layer base {
   .card {
-    @apply relative rounded-[0.3rem] bg-card flex flex-col break-words bg-clip-border h-fit shadow-sm dark:bg-default-100;
+    @apply relative rounded-[1.25rem] bg-card flex flex-col break-words bg-clip-border h-fit shadow-[0_2px_24px_-10px_rgb(15_23_42/0.12)] dark:bg-default-100 dark:shadow-none dark:border dark:border-default-200/60;
 
     .card-header {
-      @apply flex justify-between items-center gap-3 min-h-14 px-5 border-b border-default-200;
+      @apply flex justify-between items-center gap-3 min-h-14 px-6 pt-5 pb-1;
     }
 
     .card-footer {
-      @apply flex justify-between items-center gap-3 min-h-14 px-5 border-t border-default-200;
+      @apply flex justify-between items-center gap-3 min-h-14 px-6 pb-1;
     }
   }
 
   .card-body {
-    @apply p-5;
+    @apply p-6;
   }
 
   .card-title {
-    @apply text-base font-semibold text-default-800;
+    @apply text-lg font-bold text-default-800;
   }
 }

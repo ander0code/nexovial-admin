@@ -1,19 +1,25 @@
 @theme {
-  --font-body: 'DM Sans', serif;
-  --font-tourney: 'Tourney', sans-serif;
+  --font-body: 'Plus Jakarta Sans', sans-serif;
+  --font-display: 'Plus Jakarta Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 
-  --color-body-bg: var(--color-default-50);
+  /* Lienzo gris suave → las tarjetas blancas "flotan" (estilo iBanKo) */
+  --color-body-bg: var(--color-default-100);
   --color-body-color: var(--color-default-600);
 
   --color-card: var(--color-white);
 
-  --color-primary: var(--color-blue-500);
-  --color-secondary: var(--color-violet-500);
-  --color-success: var(--color-green-500);
-  --color-info: var(--color-sky-500);
-  --color-warning: var(--color-amber-500);
-  --color-danger: var(--color-orange-500);
+  /* Paleta NexoVial — un solo azul de marca + semánticos sobrios.
+     Regla minimalista: el azul manda como acento; verde/ámbar/rojo SOLO
+     para score y severidad. Nada de violeta/colores chillones. */
+  --color-primary: #1565d8;
+  --color-secondary: var(--color-default-500);
+  --color-success: #15a862;
+  --color-info: #2570b8;
+  --color-warning: #b7791f;
+  --color-danger: #d8453c;
 
+  /* Neutros: ZINC (gris puro, negro/gris real — sin subtono azul) */
   --color-default-50: var(--color-zinc-50);
   --color-default-100: var(--color-zinc-100);
   --color-default-150: var(--color-zinc-100);
@@ -34,18 +40,19 @@
   --text-4xl--line-height: 1.1;
   --text-5xl--line-height: 1.1;
 
-  --spacing-sidenav-width: 260px;
+  --spacing-sidenav-width: 248px;
   --spacing-sidenav-width-md: 175px;
   --spacing-sidenav-width-sm: 70px;
 
-  --spacing-topbar-height: 70px;
+  --spacing-topbar-height: 64px;
 
   --sidenav-link-padding-x: 12px;
-  --sidenav-link-padding-y: 8px;
+  --sidenav-link-padding-y: 9px;
   --sidenav-item-icon-size: 18px;
   --sidenav-item-font-size: 14px;
 
-  --topbar-background: var(--color-white);
+  /* El topbar se funde con el lienzo (sin barra ni línea dura) — estilo referencia */
+  --topbar-background: var(--color-default-100);
 }
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *, .dark, .dark *));
@@ -75,21 +82,21 @@
   --color-default-900: var(--color-zinc-100);
   --color-default-950: var(--color-zinc-50);
 
-  --topbar-background: var(--color-default-100);
+  --topbar-background: var(--color-zinc-950);
 }
 
-/* Light Menu */
+/* Menú claro (default) — superficie blanca, activo en azul suave */
 html[data-theme='light'],
 html[data-sidenav-color='light'] {
-  --sidenav-background: var(--color-white);
+  --sidenav-background: var(--color-default-100);
   --sidenav-item-color: var(--color-zinc-600);
   --sidenav-item-active-color: theme(backgroundColor.primary);
-  --sidenav-item-active-bg: theme(backgroundColor.primary/10%);
+  --sidenav-item-active-bg: theme(backgroundColor.primary/8%);
   --sidenav-item-hover-color: theme(backgroundColor.primary);
-  --sidenav-item-hover-bg: theme(backgroundColor.primary/10%);
+  --sidenav-item-hover-bg: theme(backgroundColor.primary/6%);
 }
 
-/* Dark Menu (Dark Mode) */
+/* Menú oscuro */
 html[data-sidenav-color='dark'],
 html[data-theme='dark'][data-sidenav-color='light'] {
   --sidenav-background: var(--color-zinc-900);
@@ -98,4 +105,30 @@ html[data-theme='dark'][data-sidenav-color='light'] {
   --sidenav-item-active-bg: var(--color-zinc-800);
   --sidenav-item-hover-color: var(--color-zinc-300);
   --sidenav-item-hover-bg: var(--color-zinc-800);
+}
+
+/* ── Personalidad tipográfica: industrial/técnico ──
+   Títulos y números-héroe en Archivo (display), tracking ceñido. El cuerpo
+   queda en DM Sans y los datos/códigos en JetBrains Mono (cifras tabulares). */
+h1, h2, h3, h4, h5, h6,
+.card-title,
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.015em;
+}
+
+/* Número-héroe: KPIs, score, métricas grandes */
+.num-hero {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Etiqueta técnica: títulos de sección, overlines, labels de KPI */
+.label-tech {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }

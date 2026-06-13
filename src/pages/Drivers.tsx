@@ -1,19 +1,13 @@
 import {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {LuCar, LuCheck, LuChevronRight, LuCopy, LuPlus, LuRoute, LuX} from 'react-icons/lu';
+import {LuArrowRight, LuCar, LuCheck, LuCopy, LuPlus, LuRoute, LuX} from 'react-icons/lu';
 import {api, type CreatedDriver, type DriverSummary, type VehicleType} from '@/api/client';
+import ScoreRing from '@/components/ui/ScoreRing';
 import DriverForm from '@/components/DriverForm';
 
 function initials(name: string): string {
   return name.split(' ').slice(0, 2).map(p => p[0] ?? '').join('').toUpperCase();
 }
-
-const TONES = [
-  'bg-primary/10 text-primary',
-  'bg-success/15 text-success',
-  'bg-amber-500/15 text-amber-600',
-  'bg-violet-500/10 text-violet-600',
-];
 
 const VEHICLE_LABEL: Record<VehicleType, string> = {
   SEDAN: 'Sedán', SUV: 'SUV', VAN: 'Van', PICKUP: 'Pickup', TRUCK: 'Camión', BUS: 'Bus', MOTORCYCLE: 'Moto',
@@ -127,37 +121,60 @@ export default function Drivers() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-          {drivers.map((d, i) => (
-            <div key={d.id} className="card">
-              <div className="card-body text-center p-6">
-                <div className={`size-16 mx-auto rounded-full grid place-items-center text-lg font-bold ${TONES[i % TONES.length]}`}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 items-stretch">
+          {drivers.map(d => (
+            <Link
+              key={d.id}
+              to={`/drivers/${d.id}`}
+              className="group card h-auto flex flex-col p-6 transition duration-200 hover:-translate-y-1 hover:shadow-[0_12px_32px_-12px_rgb(15_23_42/0.22)] dark:hover:border-default-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
+              {/* Identidad: avatar neutro + nombre + código */}
+              <div className="flex items-center gap-3">
+                <span className="size-11 shrink-0 rounded-2xl grid place-items-center bg-default-200 text-default-700 font-display font-bold text-sm">
                   {initials(d.name)}
+                </span>
+                <div className="min-w-0">
+                  <h6 className="font-display font-bold text-default-800 truncate leading-tight">{d.name}</h6>
+                  <p className="font-mono tabular-nums text-xs tracking-widest text-default-500 mt-0.5">{d.code}</p>
                 </div>
-                <h6 className="mt-4 text-base font-semibold text-default-800">{d.name}</h6>
-                <p className="text-sm text-default-500 mt-0.5">
-                  <span className="font-mono font-semibold tracking-widest text-primary">{d.code}</span>
-                </p>
+              </div>
 
-                {d.vehicle && (
-                  <div className="inline-flex items-center gap-1.5 text-xs text-default-600 bg-default-100 rounded-full px-3 py-1 mt-3">
-                    <LuCar className="size-3.5 text-default-400" />
-                    <span className="font-mono font-medium tracking-wide">{d.vehicle.plate}</span>
-                    <span className="text-default-400">· {VEHICLE_LABEL[d.vehicle.type] ?? d.vehicle.type}</span>
+              {/* Score: el dato focal */}
+              <div className="flex justify-center my-5">
+                {d.score !== null ? (
+                  <ScoreRing score={d.score} size={78} showTier />
+                ) : (
+                  <div className="inline-flex flex-col items-center gap-1.5">
+                    <div className="size-[78px] rounded-full grid place-items-center bg-default-100 text-default-400">
+                      <LuRoute className="size-7" />
+                    </div>
+                    <span className="label-tech text-[10px] text-default-400">Sin viajes</span>
                   </div>
                 )}
-
-                <div className="flex items-center justify-center gap-1.5 text-sm text-default-500 mt-3">
-                  <LuRoute className="size-4" />
-                  {d.trips} viaje{d.trips !== 1 ? 's' : ''} registrados
-                </div>
-                <Link
-                  to={`/drivers/${d.id}`}
-                  className="btn bg-primary/10 text-primary hover:bg-primary hover:text-white w-full mt-5">
-                  Ver historial <LuChevronRight className="size-4" />
-                </Link>
               </div>
-            </div>
+
+              {/* Vehículo + total de viajes */}
+              <div className="space-y-2.5">
+                {d.vehicle && (
+                  <div className="flex items-center gap-2 text-sm text-default-600">
+                    <LuCar className="size-4 shrink-0 text-default-400" />
+                    <span className="font-mono tabular-nums font-medium tracking-wide text-default-700">{d.vehicle.plate}</span>
+                    <span className="text-default-400">·</span>
+                    <span className="text-default-500 truncate">{VEHICLE_LABEL[d.vehicle.type] ?? d.vehicle.type}</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 text-sm text-default-600">
+                  <LuRoute className="size-4 shrink-0 text-default-400" />
+                  <span className="font-mono tabular-nums font-medium text-default-700">{d.trips}</span>
+                  <span className="text-default-500">viaje{d.trips !== 1 ? 's' : ''} registrado{d.trips !== 1 ? 's' : ''}</span>
+                </div>
+              </div>
+
+              {/* Afordancia de navegación, anclada abajo */}
+              <div className="mt-auto pt-5 flex items-center gap-1.5 text-sm font-medium text-primary">
+                Ver historial
+                <LuArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+              </div>
+            </Link>
           ))}
         </div>
       )}

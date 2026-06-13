@@ -2,7 +2,7 @@ import {useEffect, useMemo, useState} from 'react';
 import {Link, useParams, useSearchParams} from 'react-router-dom';
 import {
   LuChevronLeft, LuChevronRight, LuCar, LuCalendarClock, LuRoute, LuShield, LuMapPin,
-  LuTriangleAlert, LuPhone, LuIdCard, LuBadgeCheck, LuClock,
+  LuTriangleAlert, LuPhone, LuIdCard, LuBadgeCheck, LuClock, LuUserRound,
 } from 'react-icons/lu';
 import type {IconType} from 'react-icons';
 import {api, type DriverDetail as DriverDetailType, type ScheduleBlock, type VehicleType, type TripDetail} from '@/api/client';
@@ -381,66 +381,92 @@ function ScheduleTab({schedule}: {schedule: ScheduleBlock[]}) {
 
   const HOURS = [0, 6, 12, 18, 24];
 
+  // Misma plantilla de columnas para la regla de horas Y cada fila de día, de modo
+  // que la pista (col 2) quede perfectamente alineada: las marcas 00h–24h viven
+  // SOLO sobre la pista y nunca pisan el día (col 1) ni el rango horario (col 3).
+  // [ día · pista flexible · rango horario auto ]
+  // Anchos FIJOS en col 1 (día) y col 3 (rango horario) → la col 2 (el riel 0h–24h)
+  // queda idéntica en la fila del eje Y en cada fila de día. Solo así las marcas de
+  // hora y las barras comparten exactamente la misma escala y todo se alinea.
+  const gridCols = '3.5rem minmax(0, 1fr) 17rem';
+
   return (
-    <div className="flex flex-col gap-4">
-      {/* Regla de horas (00–24) */}
-      <div className="flex items-center gap-3 pl-[4.5rem] pr-2">
-        <div className="relative flex-grow h-4">
-          {HOURS.map(h => (
-            <span key={h} className="absolute -translate-x-1/2 text-[11px] text-default-400 font-mono" style={{left: `${(h / 24) * 100}%`}}>
-              {String(h).padStart(2, '0')}h
-            </span>
-          ))}
+    <div className="flex flex-col gap-5">
+      <div className="rounded-2xl bg-default-50 border border-default-200/70 p-5 sm:p-6 flex flex-col gap-4">
+        {/* Regla de horas (00–24) — alineada con la pista vía la misma rejilla */}
+        <div className="grid items-center gap-x-4" style={{gridTemplateColumns: gridCols}}>
+          <span aria-hidden />
+          <div className="relative h-4">
+            {HOURS.map(h => (
+              <span
+                key={h}
+                className="absolute top-0 text-[11px] text-default-400 font-mono tabular-nums"
+                style={{left: `${(h / 24) * 100}%`, transform: h === 0 ? 'none' : h === 24 ? 'translateX(-100%)' : 'translateX(-50%)'}}>
+                {String(h).padStart(2, '0')}h
+              </span>
+            ))}
+          </div>
+          <span aria-hidden />
         </div>
+
+        <ul className="flex flex-col gap-1">
+          {WEEK.map(({day, label, long}) => {
+            const {work, rest} = blocksForDay(schedule, day);
+            const isRestDay = !work;
+            return (
+              <li
+                key={day}
+                className={`grid items-center gap-x-4 py-2 rounded-xl transition-colors ${isRestDay ? '' : 'hover:bg-card'}`}
+                style={{gridTemplateColumns: gridCols}}>
+                {/* Col 1 — etiqueta del día */}
+                <span className={`text-sm font-medium ${isRestDay ? 'text-default-400' : 'text-default-700'}`} title={long}>{label}</span>
+
+                {/* Col 2 — pista 0h→24h: marcas, turno y descanso viven SOLO aquí */}
+                <div className="relative h-8 rounded-full bg-default-100 overflow-hidden">
+                  {/* Líneas guía cada 6h */}
+                  {[6, 12, 18].map(h => (
+                    <span key={h} className="absolute top-1.5 bottom-1.5 w-px bg-default-200/70" style={{left: `${(h / 24) * 100}%`}} />
+                  ))}
+                  {work && (
+                    <>
+                      {/* Bloque de trabajo — píldora redondeada, padding vertical para respirar */}
+                      <div
+                        className="absolute top-1 bottom-1 bg-primary/90 rounded-full shadow-sm"
+                        style={{left: `${(work.startMin / DAY_MIN) * 100}%`, width: `${((work.endMin - work.startMin) / DAY_MIN) * 100}%`}}
+                      />
+                      {/* Descanso — pausa suave dentro del turno (ámbar tenue, no estridente) */}
+                      {rest && (
+                        <div
+                          className="absolute top-1 bottom-1 bg-warning rounded-full ring-2 ring-default-100"
+                          style={{left: `${(rest.startMin / DAY_MIN) * 100}%`, width: `${((rest.endMin - rest.startMin) / DAY_MIN) * 100}%`}}
+                          title={`Descanso ${minToHHMM(rest.startMin)}–${minToHHMM(rest.endMin)}`}
+                        />
+                      )}
+                    </>
+                  )}
+                </div>
+
+                {/* Col 3 — rango horario: columna propia, jamás pisa la regla de horas */}
+                <span className="text-end text-sm whitespace-nowrap">
+                  {work ? (
+                    <span className="font-mono tabular-nums text-default-700">
+                      {minToHHMM(work.startMin)}–{minToHHMM(work.endMin)}
+                      {rest && <span className="text-default-400"> · desc {minToHHMM(rest.startMin)}–{minToHHMM(rest.endMin)}</span>}
+                    </span>
+                  ) : (
+                    <span className="text-default-400">libre</span>
+                  )}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
       </div>
 
-      <ul className="flex flex-col divide-y divide-default-100">
-        {WEEK.map(({day, label, long}) => {
-          const {work, rest} = blocksForDay(schedule, day);
-          return (
-            <li key={day} className="flex items-center gap-3 py-2.5">
-              <span className="w-[4.5rem] shrink-0 text-sm font-medium text-default-700" title={long}>{label}</span>
-              <div className="relative flex-grow h-9 rounded bg-default-100 border border-default-200 overflow-hidden">
-                {/* Líneas guía cada 6h */}
-                {[6, 12, 18].map(h => (
-                  <span key={h} className="absolute top-0 bottom-0 w-px bg-default-200" style={{left: `${(h / 24) * 100}%`}} />
-                ))}
-                {work && (
-                  <>
-                    {/* Bloque de trabajo */}
-                    <div
-                      className="absolute top-0 bottom-0 bg-primary/80 rounded-sm"
-                      style={{left: `${(work.startMin / DAY_MIN) * 100}%`, width: `${((work.endMin - work.startMin) / DAY_MIN) * 100}%`}}
-                    />
-                    {/* Hueco de descanso (se superpone sobre el bloque) */}
-                    {rest && (
-                      <div
-                        className="absolute top-0 bottom-0 bg-card border-x border-amber-400/70"
-                        style={{left: `${(rest.startMin / DAY_MIN) * 100}%`, width: `${((rest.endMin - rest.startMin) / DAY_MIN) * 100}%`, backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(224,146,42,0.18) 4px, rgba(224,146,42,0.18) 8px)'}}
-                      />
-                    )}
-                  </>
-                )}
-              </div>
-              <span className="w-56 shrink-0 text-end text-sm">
-                {work ? (
-                  <span className="font-mono text-default-700">
-                    {minToHHMM(work.startMin)}–{minToHHMM(work.endMin)}
-                    {rest && <span className="text-default-400 font-sans"> · desc. {minToHHMM(rest.startMin)}–{minToHHMM(rest.endMin)}</span>}
-                  </span>
-                ) : (
-                  <span className="text-default-300">libre</span>
-                )}
-              </span>
-            </li>
-          );
-        })}
-      </ul>
-
       {/* Leyenda */}
-      <div className="flex items-center gap-5 pt-3 mt-1 border-t border-default-200">
-        <span className="inline-flex items-center gap-1.5 text-xs text-default-600"><span className="size-2.5 rounded-sm bg-primary/80" /> Turno laboral</span>
-        <span className="inline-flex items-center gap-1.5 text-xs text-default-600"><span className="size-2.5 rounded-sm border border-amber-400/70" style={{backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(224,146,42,0.25) 2px, rgba(224,146,42,0.25) 4px)'}} /> Descanso</span>
+      <div className="flex items-center gap-5 px-1">
+        <span className="inline-flex items-center gap-2 text-xs font-medium text-default-600"><span className="size-2.5 rounded-full bg-primary/90" /> Turno laboral</span>
+        <span className="inline-flex items-center gap-2 text-xs font-medium text-default-600"><span className="size-2.5 rounded-full bg-warning" /> Descanso</span>
       </div>
     </div>
   );
@@ -455,52 +481,50 @@ function VehicleTab({driver}: {driver: DriverDetailType}) {
     {Icon: LuBadgeCheck, label: 'Licencia', value: driver.license},
   ].filter(p => p.value) as Array<{Icon: IconType; label: string; value: string | null}>;
 
+  const specs: Array<{label: string; value: string; mono?: boolean}> = vehicle ? [
+    {label: 'Marca', value: vehicle.brand || '—'},
+    {label: 'Modelo', value: vehicle.model || '—'},
+    {label: 'Año', value: vehicle.year ? String(vehicle.year) : '—', mono: true},
+    {label: 'Antigüedad', value: vehicle.year ? `${Math.max(0, new Date().getFullYear() - vehicle.year)} años` : '—'},
+  ] : [];
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-stretch">
       {/* Vehículo */}
-      <div className="lg:col-span-2">
+      <div className="lg:col-span-2 flex">
         {vehicle ? (
-          <div className="rounded border border-default-200 bg-default-50 p-6">
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
+          <div className="flex-grow rounded-2xl border border-default-200 bg-default-50 p-6 flex flex-col gap-6">
+            <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-5">
+              {/* Placa — motivo de matrícula real */}
               <div>
-                <p className="text-xs text-default-400 mb-1.5 uppercase tracking-wide">Placa</p>
-                <span className="inline-block font-mono text-3xl font-bold tracking-wider text-default-800 bg-card border border-default-300 rounded-md px-4 py-2 shadow-sm">
+                <p className="label-tech text-[11px] text-default-400 mb-2">Placa</p>
+                <span className="inline-flex items-center justify-center font-mono font-bold text-3xl tracking-wider tabular-nums text-default-800 bg-card border-2 border-default-300 rounded-xl px-5 py-2.5 shadow-sm">
                   {vehicle.plate}
                 </span>
               </div>
+              {/* Tipo — tile suave azul */}
               <div className="flex items-center gap-3">
-                <span className="size-12 rounded-full bg-primary/10 text-primary grid place-items-center"><LuCar className="size-6" /></span>
+                <span className="size-12 rounded-xl bg-primary/10 text-primary grid place-items-center shrink-0"><LuCar className="size-6" /></span>
                 <div>
-                  <p className="text-xs text-default-400 uppercase tracking-wide">Tipo</p>
-                  <p className="font-semibold text-default-800 text-lg">{VEHICLE_LABEL[vehicle.type] ?? vehicle.type}</p>
+                  <p className="label-tech text-[11px] text-default-400 mb-1">Tipo</p>
+                  <p className="font-semibold text-default-800 text-lg leading-none">{VEHICLE_LABEL[vehicle.type] ?? vehicle.type}</p>
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-5 border-t border-default-200">
-              <div>
-                <p className="text-xs text-default-400 uppercase tracking-wide mb-1">Marca</p>
-                <p className="font-medium text-default-800">{vehicle.brand || '—'}</p>
-              </div>
-              <div>
-                <p className="text-xs text-default-400 uppercase tracking-wide mb-1">Modelo</p>
-                <p className="font-medium text-default-800">{vehicle.model || '—'}</p>
-              </div>
-              <div>
-                <p className="text-xs text-default-400 uppercase tracking-wide mb-1">Año</p>
-                <p className="font-medium text-default-800 font-mono">{vehicle.year || '—'}</p>
-              </div>
-              <div>
-                <p className="text-xs text-default-400 uppercase tracking-wide mb-1">Antigüedad</p>
-                <p className="font-medium text-default-800">
-                  {vehicle.year ? `${Math.max(0, new Date().getFullYear() - vehicle.year)} años` : '—'}
-                </p>
-              </div>
+            {/* Ficha técnica */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-px rounded-xl overflow-hidden bg-default-200 border border-default-200 mt-auto">
+              {specs.map(s => (
+                <div key={s.label} className="bg-default-50 px-4 py-3.5">
+                  <p className="label-tech text-[11px] text-default-400 mb-1.5">{s.label}</p>
+                  <p className={`font-semibold text-default-800 ${s.mono ? 'font-mono tabular-nums' : ''}`}>{s.value}</p>
+                </div>
+              ))}
             </div>
           </div>
         ) : (
-          <div className="rounded border border-default-200 bg-default-50 p-10 text-center">
-            <div className="size-12 rounded-full bg-default-100 text-default-400 grid place-items-center mx-auto mb-3"><LuCar className="size-6" /></div>
+          <div className="flex-grow rounded-2xl border border-default-200 bg-default-50 p-10 flex flex-col items-center justify-center text-center">
+            <div className="size-14 rounded-full bg-default-100 text-default-400 grid place-items-center mb-3"><LuCar className="size-7" /></div>
             <p className="text-default-600 font-medium">Sin vehículo asignado</p>
             <p className="text-default-400 text-sm mt-1">Asigna un vehículo a este conductor desde su ficha.</p>
           </div>
@@ -508,18 +532,22 @@ function VehicleTab({driver}: {driver: DriverDetailType}) {
       </div>
 
       {/* Datos del conductor */}
-      <div className="rounded border border-default-200 p-5">
+      <div className="rounded-2xl border border-default-200 p-6 flex flex-col">
         <h6 className="card-title mb-4">Datos del conductor</h6>
         {person.length === 0 ? (
-          <p className="text-default-400 text-sm">Sin datos de contacto registrados.</p>
+          <div className="flex-grow flex flex-col items-center justify-center text-center py-6">
+            <div className="size-14 rounded-full bg-default-100 text-default-400 grid place-items-center mb-3"><LuUserRound className="size-7" /></div>
+            <p className="text-default-600 font-medium">Sin datos de contacto</p>
+            <p className="text-default-400 text-sm mt-1 max-w-[14rem]">Aún no se registran teléfono, DNI ni licencia para este conductor.</p>
+          </div>
         ) : (
           <ul className="flex flex-col divide-y divide-default-200">
             {person.map(p => (
-              <li key={p.label} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                <span className="size-9 rounded bg-default-100 text-default-500 grid place-items-center shrink-0"><p.Icon className="size-4.5" /></span>
+              <li key={p.label} className="flex items-center gap-3 py-3.5 first:pt-0 last:pb-0">
+                <span className="size-9 rounded-xl bg-default-100 text-default-500 grid place-items-center shrink-0"><p.Icon className="size-4.5" /></span>
                 <div className="min-w-0">
-                  <p className="text-xs text-default-400">{p.label}</p>
-                  <p className="font-medium text-default-800 font-mono truncate">{p.value}</p>
+                  <p className="label-tech text-[11px] text-default-400 mb-0.5">{p.label}</p>
+                  <p className="font-semibold text-default-800 font-mono tabular-nums truncate">{p.value}</p>
                 </div>
               </li>
             ))}

@@ -6,12 +6,14 @@ import Topbar from '@/components/layout/Topbar';
 import Alerts from '@/pages/Alerts';
 import DriverDetail from '@/pages/DriverDetail';
 import Drivers from '@/pages/Drivers';
+import FleetMap from '@/pages/FleetMap';
 import Login from '@/pages/Login';
 import Rankings from '@/pages/Rankings';
 import Resumen from '@/pages/Resumen';
 
 const PAGE_TITLE: Record<string, string> = {
   '/resumen': 'Resumen de flota',
+  '/mapa': 'Mapa de flota',
   '/rankings': 'Ranking de conductores',
   '/alerts': 'Alertas de riesgo',
   '/drivers': 'Conductores',
@@ -65,6 +67,7 @@ export default function App() {
       <Route element={<Layout />}>
         <Route path="/" element={<Navigate to="/resumen" replace />} />
         <Route path="/resumen" element={<Resumen />} />
+        <Route path="/mapa" element={<FleetMap />} />
         <Route path="/rankings" element={<Rankings />} />
         <Route path="/alerts" element={<Alerts />} />
         <Route path="/drivers" element={<Drivers />} />

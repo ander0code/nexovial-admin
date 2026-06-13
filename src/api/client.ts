@@ -79,6 +79,8 @@ export type DriverSummary = {
   createdAt: string;
   vehicle: Vehicle | null;
   trips: number;
+  /** Promedio rolling de score (últimos 30 días, withinShift). null = sin viajes. */
+  score: number | null;
 };
 
 export type RoutePoint = {lat: number; lng: number};
@@ -110,6 +112,38 @@ export type DriverDetail = {
   vehicle: Vehicle | null;
   schedule: ScheduleBlock[];
   trips: TripDetail[];
+};
+
+// ── Mapa de flota (GET /api/admin/fleet/map) ─────────────────────────────────
+
+export type FleetTrip = {
+  id: string;
+  startTime: string;
+  endTime: string;
+  score: number;
+  distance: number;
+  withinShift: boolean;
+  route: RoutePoint[] | null;
+  events: TripDetail['events'];
+};
+
+export type FleetDriver = {
+  id: string;
+  name: string;
+  code: string;
+  vehicle: {plate: string; type: VehicleType} | null;
+  score: number | null;
+  /** true = dentro de un bloque WORK de su horario en este momento (hora Lima). */
+  onShiftNow: boolean;
+  /** Hora del último viaje de todos los tiempos (no del rango). null = nunca manejó. */
+  lastTripEndTime: string | null;
+  trips: FleetTrip[];
+};
+
+export type FleetMapResponse = {
+  from: string;
+  to: string;
+  drivers: FleetDriver[];
 };
 
 // ── Alta de conductor (POST /api/admin/drivers) ──────────────────────────────

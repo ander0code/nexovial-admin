@@ -38,6 +38,7 @@ La app móvil del conductor se mantiene OSCURA a propósito (uso nocturno al vol
 | Página | Ruta | Qué muestra |
 |---|---|---|
 | Resumen | `/resumen` | KPIs de flota (score, viajes, km, alertas 30d) + chart de eventos por día (ApexCharts) + donut por tipo + top 3 conductores. Es la landing tras el login. Consume GET /api/admin/summary |
+| Mapa | `/mapa` | Mapa de toda la flota (MapLibre): un marcador por conductor en su última posición conocida (color por score, anillo si está en turno), filtro por rango de fecha, clic → recorrido + eventos del conductor. NO es posición en vivo del teléfono (batch al terminar el viaje); el feel "en vivo" llega por Socket.io `trip_synced`. Consume GET /api/admin/fleet/map |
 | Rankings | `/rankings` | Tabla de conductores ordenada por score del período |
 | Alertas | `/alerts` | Feed en tiempo real de eventos de riesgo severos |
 | Conductores | `/drivers` | Lista de conductores, código QR para onboarding |

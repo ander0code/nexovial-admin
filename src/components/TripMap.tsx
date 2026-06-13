@@ -4,7 +4,8 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import {LuMapPinOff, LuMaximize, LuMinimize, LuX, LuTriangleAlert} from 'react-icons/lu';
 import type {RoutePoint, TripDetail} from '@/api/client';
 
-const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
+const MAP_STYLE_LIGHT = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
+const MAP_STYLE_DARK = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
 
 const ROUTE_COLOR = '#2570B8';
 const START_COLOR = '#1F8A5F';
@@ -104,6 +105,15 @@ export default function TripMap({
   const [fullscreen, setFullscreen] = useState(false);
   const [selected, setSelected] = useState<{ev: GeoEvent; idx: number} | null>(null);
 
+  // Mapa oscuro (CARTO dark-matter) cuando el tema está en oscuro — acorde a la referencia.
+  // Observamos el atributo data-theme del <html> para reaccionar al toggle en vivo.
+  const [isDark, setIsDark] = useState(() => document.documentElement.dataset.theme === 'dark');
+  useEffect(() => {
+    const obs = new MutationObserver(() => setIsDark(document.documentElement.dataset.theme === 'dark'));
+    obs.observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme']});
+    return () => obs.disconnect();
+  }, []);
+
   const coords = route ?? [];
   const eventCoords = events.filter(hasCoords);
   const hasGeo = coords.length > 0 || eventCoords.length > 0;
@@ -150,7 +160,7 @@ export default function TripMap({
     const firstPoint = coords[0] ?? eventCoords[0] ?? null;
     const map = new maplibregl.Map({
       container,
-      style: MAP_STYLE,
+      style: isDark ? MAP_STYLE_DARK : MAP_STYLE_LIGHT,
       attributionControl: false,
       center: firstPoint ? [firstPoint.lng, firstPoint.lat] : [-77.03, -12.06],
       zoom: 12,
@@ -238,7 +248,7 @@ export default function TripMap({
       map.remove();
       mapRef.current = null;
     };
-  }, [route, events]);
+  }, [route, events, isDark]);
 
   // Al cambiar tamaño (fullscreen ↔ normal) MapLibre necesita un resize.
   useEffect(() => {
