@@ -127,15 +127,19 @@ export default function FleetMapCanvas({
   selectedId,
   showAllRoutes,
   onSelect,
+  livePositions,
 }: {
   drivers: FleetDriver[];
   selectedId: string | null;
   showAllRoutes: boolean;
   onSelect: (id: string | null) => void;
+  /** Posición en vivo por driverId (GPS Fase 2): si existe, el marcador se mueve ahí. */
+  livePositions: Map<string, {lng: number; lat: number}>;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
-  const driverMarkersRef = useRef<maplibregl.Marker[]>([]);
+  // Marcadores de conductor por driverId → poder mover uno solo en vivo (sin rebuild).
+  const driverMarkersRef = useRef<Map<string, maplibregl.Marker>>(new Map());
   const eventMarkersRef = useRef<maplibregl.Marker[]>([]);
   // Elementos DOM (el dot interno) de cada marcador de evento, por clave → para resaltar.
   const eventElsRef = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -223,9 +227,9 @@ export default function FleetMapCanvas({
 
     return () => {
       ro.disconnect();
-      for (const m of driverMarkersRef.current) m.remove();
+      for (const m of driverMarkersRef.current.values()) m.remove();
       for (const m of eventMarkersRef.current) m.remove();
-      driverMarkersRef.current = [];
+      driverMarkersRef.current = new Map();
       eventMarkersRef.current = [];
       map.remove();
       mapRef.current = null;
@@ -241,9 +245,9 @@ export default function FleetMapCanvas({
     const src = map.getSource('fleet-routes') as maplibregl.GeoJSONSource | undefined;
     src?.setData(buildRoutes(drivers, selectedId, showAllRoutes));
 
-    // Marcadores de posición (rehacerlos es barato: son pocos)
-    for (const m of driverMarkersRef.current) m.remove();
-    driverMarkersRef.current = [];
+    // Marcadores de posición (rehacerlos es barato: son pocos), indexados por driverId.
+    for (const m of driverMarkersRef.current.values()) m.remove();
+    driverMarkersRef.current = new Map();
 
     for (const d of drivers) {
       const pos = driverPosition(d);
@@ -267,7 +271,7 @@ export default function FleetMapCanvas({
         onSelectRef.current(selected ? null : d.id);
       });
       const marker = new maplibregl.Marker({element: el}).setLngLat(pos).addTo(map);
-      driverMarkersRef.current.push(marker);
+      driverMarkersRef.current.set(d.id, marker);
     }
 
     // Marcadores de evento (solo del conductor seleccionado) — clic = tarjeta de detalle
@@ -327,6 +331,16 @@ export default function FleetMapCanvas({
       firstFitRef.current = false;
     }
   }, [drivers, selectedId, showAllRoutes, ready, isDark]);
+
+  // GPS Fase 2: mueve el marcador a su posición EN VIVO con setLngLat, SIN reconstruir
+  // (no dispara fitBounds → la cámara no salta). Se reaplica tras un rebuild (deps
+  // drivers/ready) porque ahí los marcadores vuelven a su última posición de viaje.
+  useEffect(() => {
+    if (!ready) return;
+    for (const [driverId, pos] of livePositions) {
+      driverMarkersRef.current.get(driverId)?.setLngLat([pos.lng, pos.lat]);
+    }
+  }, [livePositions, drivers, ready]);
 
   // Resalta el marcador del evento seleccionado (escala el dot interno, sin mover).
   useEffect(() => {

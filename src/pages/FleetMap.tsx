@@ -50,6 +50,8 @@ export default function FleetMap() {
   const [error, setError] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showAllRoutes, setShowAllRoutes] = useState(false);
+  // GPS Fase 2: posición en vivo por driverId (evento driver_location vía Socket.io).
+  const [livePositions, setLivePositions] = useState<Map<string, {lng: number; lat: number}>>(new Map());
 
   const fetchData = useCallback(async () => {
     const range = RANGES.find(r => r.key === rangeKey)!;
@@ -80,9 +82,13 @@ export default function FleetMap() {
     if (!admin) return;
     const socket = getSocket(admin.companyId);
     const onSync = () => fetchData();
+    const onLoc = (loc: {driverId: string; lat: number; lng: number}) =>
+      setLivePositions(prev => new Map(prev).set(loc.driverId, {lng: loc.lng, lat: loc.lat}));
     socket.on('trip_synced', onSync);
+    socket.on('driver_location', onLoc);
     return () => {
       socket.off('trip_synced', onSync);
+      socket.off('driver_location', onLoc);
     };
   }, [fetchData]);
 
@@ -227,6 +233,7 @@ export default function FleetMap() {
                 selectedId={selectedId}
                 showAllRoutes={showAllRoutes}
                 onSelect={setSelectedId}
+                livePositions={livePositions}
               />
               {!loading && !anyPosition && (
                 <div className="pointer-events-none absolute inset-0 grid place-items-center">
