@@ -97,7 +97,9 @@ export default function Resumen() {
   }
 
   const baseChart = (extra: ApexOptions): ApexOptions => ({
-    chart: {toolbar: {show: false}, fontFamily: 'DM Sans, sans-serif', foreColor: dark ? '#a1a1aa' : '#71717a'},
+    // animations off: evita el crash de react-apexcharts (runMaskReveal sobre un nodo
+    // ya desmontado al navegar rápido fuera del Resumen). Render instantáneo, sin jank.
+    chart: {toolbar: {show: false}, animations: {enabled: false}, fontFamily: 'DM Sans, sans-serif', foreColor: dark ? '#a1a1aa' : '#71717a'},
     grid: {borderColor: dark ? '#3f3f46' : '#e4e4e7', strokeDashArray: 4, padding: {top: 0, right: 8}},
     dataLabels: {enabled: false},
     tooltip: {theme: dark ? 'dark' : 'light'},
@@ -114,7 +116,7 @@ export default function Resumen() {
   });
 
   const donutOptions: ApexOptions = {
-    chart: {fontFamily: 'DM Sans, sans-serif'},
+    chart: {animations: {enabled: false}, fontFamily: 'DM Sans, sans-serif'},
     labels: s.eventsByType.map(e => EVENT_LABEL[e.type] ?? e.type),
     colors: s.eventsByType.map(e => EVENT_COLOR[e.type] ?? '#71717a'),
     legend: {position: 'bottom', fontSize: '13px', labels: {colors: dark ? '#a1a1aa' : '#71717a'}},
@@ -125,7 +127,7 @@ export default function Resumen() {
   };
 
   const hourOptions = baseChart({
-    chart: {type: 'bar', toolbar: {show: false}, fontFamily: 'DM Sans, sans-serif', foreColor: dark ? '#a1a1aa' : '#71717a'},
+    chart: {type: 'bar', toolbar: {show: false}, animations: {enabled: false}, fontFamily: 'DM Sans, sans-serif', foreColor: dark ? '#a1a1aa' : '#71717a'},
     colors: ['#94a3b8', '#22c55e', '#f59e0b', '#6366f1'], // madrugada/mañana/tarde/noche
     plotOptions: {bar: {borderRadius: 4, columnWidth: '45%', distributed: true}},
     legend: {show: false},

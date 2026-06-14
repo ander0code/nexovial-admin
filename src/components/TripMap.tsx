@@ -164,10 +164,15 @@ export default function TripMap({
       attributionControl: false,
       center: firstPoint ? [firstPoint.lng, firstPoint.lat] : [-77.03, -12.06],
       zoom: 12,
+      // Norte fijo, 2D — sin giro ni inclinación (consistente con el mapa de flota).
+      dragRotate: false,
+      pitchWithRotate: false,
+      touchPitch: false,
     });
     mapRef.current = map;
     map.addControl(new maplibregl.NavigationControl({showCompass: false}), 'top-right');
     map.scrollZoom.disable(); // evita zoom accidental al hacer scroll en la página
+    map.touchZoomRotate.disableRotation();
     map.on('error', e => {
       const msg = (e as {error?: Error}).error?.message;
       if (msg) console.warn('[TripMap]', msg);

@@ -15,7 +15,10 @@ api.interceptors.request.use(config => {
 api.interceptors.response.use(
   response => response,
   error => {
-    if (error.response?.status === 401) {
+    // Un 401 del propio login NO debe redirigir (lo maneja la página mostrando el
+    // error); solo expulsamos en 401 de endpoints autenticados (sesión vencida).
+    const isAuthRequest = error.config?.url?.includes('/api/admin/auth');
+    if (error.response?.status === 401 && !isAuthRequest) {
       localStorage.removeItem('nexovial:token');
       localStorage.removeItem('nexovial:admin');
       window.location.href = '/login';
