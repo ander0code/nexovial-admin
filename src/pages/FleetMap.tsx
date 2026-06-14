@@ -56,11 +56,11 @@ export default function FleetMap() {
     const to = new Date();
     const from = new Date(to.getTime() - range.days * 24 * 60 * 60 * 1000);
     try {
-      setError(false);
       const {data} = await api.get<FleetMapResponse>('/api/admin/fleet/map', {
         params: {from: from.toISOString(), to: to.toISOString()},
       });
       setData(data);
+      setError(false);
     } catch {
       setError(true);
     } finally {
@@ -68,8 +68,9 @@ export default function FleetMap() {
     }
   }, [rangeKey]);
 
+  // El loading se enciende al montar (estado inicial) y al cambiar de rango (en el
+  // onClick del botón) — no dentro del effect, para no encadenar renders.
   useEffect(() => {
-    setLoading(true);
     fetchData();
   }, [fetchData]);
 
@@ -100,7 +101,10 @@ export default function FleetMap() {
             {RANGES.map(r => (
               <button
                 key={r.key}
-                onClick={() => setRangeKey(r.key)}
+                onClick={() => {
+                  setRangeKey(r.key);
+                  setLoading(true);
+                }}
                 className={`rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors ${
                   rangeKey === r.key ? 'bg-primary text-white' : 'text-default-500 hover:text-default-800'
                 }`}>

@@ -54,7 +54,7 @@ export default function LoginHeroMap() {
         const r = ROUTES[i]!;
         const period = r.dur + r.gap;
         const e = elapsed - r.delay;
-        let op = 0;
+        let op: number;
         let t = 1;
         if (e >= 0) {
           const local = e % period;

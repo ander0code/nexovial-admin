@@ -140,16 +140,25 @@ export default function FleetMapCanvas({
   // Elementos DOM (el dot interno) de cada marcador de evento, por clave → para resaltar.
   const eventElsRef = useRef<Map<string, HTMLDivElement>>(new Map());
   const firstFitRef = useRef(true);
-  // Ref para que el handler de clic del marcador no quede con un onSelect viejo.
+  // Refs para leer el último valor dentro de handlers del mapa (sin closures viejos).
   const onSelectRef = useRef(onSelect);
-  onSelectRef.current = onSelect;
 
   const [ready, setReady] = useState(false);
   const [isDark, setIsDark] = useState(() => document.documentElement.dataset.theme === 'dark');
   const [selectedEvent, setSelectedEvent] = useState<SelectedEvent | null>(null);
-  // Ref espejo para leer el evento seleccionado dentro de handlers del mapa.
-  const selectedEventRef = useRef<SelectedEvent | null>(selectedEvent);
-  selectedEventRef.current = selectedEvent;
+  const selectedEventRef = useRef<SelectedEvent | null>(null);
+
+  // El detalle solo aplica al conductor seleccionado actual: si cambia la selección,
+  // se oculta por DERIVACIÓN (sin un effect que resetee estado — best practice React).
+  const activeEvent = selectedEvent && selectedEvent.driverId === selectedId ? selectedEvent : null;
+
+  // Sincroniza los refs con el último valor FUERA del render (no mutar refs en render).
+  // El ref guarda el evento ACTIVO (gated): así el clic en el lienzo cierra la tarjeta
+  // solo cuando hay una realmente abierta.
+  useEffect(() => {
+    onSelectRef.current = onSelect;
+    selectedEventRef.current = activeEvent;
+  });
 
   // Reacciona al toggle de tema en vivo (igual que TripMap).
   useEffect(() => {
@@ -319,26 +328,21 @@ export default function FleetMapCanvas({
     }
   }, [drivers, selectedId, showAllRoutes, ready, isDark]);
 
-  // Cierra el detalle si cambia el conductor, los datos o el tema (los eventos cambian).
-  useEffect(() => {
-    setSelectedEvent(null);
-  }, [selectedId, drivers, isDark]);
-
   // Resalta el marcador del evento seleccionado (escala el dot interno, sin mover).
   useEffect(() => {
     eventElsRef.current.forEach((el, key) => {
-      const sel = selectedEvent?.key === key;
+      const sel = activeEvent?.key === key;
       el.style.transform = sel ? 'scale(1.7)' : 'scale(1)';
       el.style.boxShadow = sel
         ? '0 0 0 4px rgba(37,112,184,0.35), 0 2px 6px rgba(15,23,42,.45)'
         : '0 1px 4px rgba(15,23,42,.4)';
       el.style.zIndex = sel ? '5' : '1';
     });
-  }, [selectedEvent]);
+  }, [activeEvent]);
 
-  const detail = selectedEvent
+  const detail = activeEvent
     ? (() => {
-        const {ev, driverName, driverId, tripId} = selectedEvent;
+        const {ev, driverName, driverId, tripId} = activeEvent;
         const lvl = severityLevel(ev.type, ev.severity);
         return {
           driverName,
